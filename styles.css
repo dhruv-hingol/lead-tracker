@@ -477,6 +477,7 @@ tr.selected {
 }
 
 .input-field input, .input-field select {
+  width: 100%;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   color: var(--text-primary);

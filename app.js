@@ -488,21 +488,50 @@ function renderTable() {
     const outreachBadge = `<span class="${outreachClass}" style="text-transform: capitalize;">${outreach}</span>`;
 
     const websiteLink = lead.website_url 
-      ? `<a href="${lead.website_url}" target="_blank" class="table-link" style="color: var(--accent-primary); text-decoration: none;" title="${lead.website_url}"><i class="fa-solid fa-arrow-up-right-from-square"></i> Visit</a>` 
+      ? `<a href="${lead.website_url}" target="_blank" class="table-link" style="color: var(--primary); text-decoration: none;" title="${lead.website_url}"><i class="fa-solid fa-arrow-up-right-from-square"></i> Visit</a>` 
       : '<span style="color: var(--text-muted)">None</span>';
 
-    const emailText = lead.contact_email && lead.contact_email !== 'Not Found' 
-      ? `<span class="table-email" style="font-size: 0.8rem;" title="${lead.contact_email}">${lead.contact_email}</span>` 
+    const phoneValue = lead.phone || '';
+    const phoneHTML = phoneValue
+      ? `<div style="display: flex; align-items: center; gap: 0.35rem; white-space: nowrap;">
+           <span>${phoneValue}</span>
+           <button class="copy-cell-btn" data-copy="${phoneValue}" title="Copy Phone Number">
+             <i class="fa-regular fa-copy"></i>
+           </button>
+         </div>`
       : '<span style="color: var(--text-muted)">None</span>';
+
+    const emailValue = (lead.contact_email && lead.contact_email !== 'Not Found') ? lead.contact_email : '';
+    const emailHTML = emailValue
+      ? `<div style="display: flex; align-items: center; gap: 0.35rem; white-space: nowrap;">
+           <span class="table-email" style="font-size: 0.8rem;" title="${emailValue}">${emailValue}</span>
+           <button class="copy-cell-btn" data-copy="${emailValue}" title="Copy Email Address">
+             <i class="fa-regular fa-copy"></i>
+           </button>
+         </div>`
+      : '<span style="color: var(--text-muted)">None</span>';
+
+    const companyName = lead.business_name || 'Unknown';
+    const initials = companyName.charAt(0).toUpperCase();
+    const circleColors = ['#2F6FED', '#06b6d4', '#10b981', '#f59e0b', '#7c3aed', '#f43f5e'];
+    const colorIndex = initials.charCodeAt(0) % circleColors.length;
+    const circleBg = circleColors[colorIndex];
 
     tr.innerHTML = `
-      <td style="font-weight: 600;">${lead.business_name || 'Unknown'}</td>
       <td>
-        <div style="font-size: 0.85rem; font-weight: 500;">${lead.category || 'N/A'}</div>
-        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.1rem;">${lead.city_region || 'N/A'}</div>
+        <div class="company-cell">
+          <div class="company-logo-circle" style="background-color: ${circleBg};">${initials}</div>
+          <div>
+            <div class="company-name">${companyName}</div>
+            <div class="company-desc">${lead.category || 'N/A'}</div>
+          </div>
+        </div>
       </td>
-      <td>${lead.phone || '<span style="color: var(--text-muted)">None</span>'}</td>
-      <td>${emailText}</td>
+      <td>
+        <div style="font-size: 0.85rem; font-weight: 500;">${lead.city_region || 'N/A'}</div>
+      </td>
+      <td>${phoneHTML}</td>
+      <td>${emailHTML}</td>
       <td>${websiteLink}</td>
       <td>${statusBadge}</td>
       <td>${outreachBadge}</td>
@@ -515,6 +544,31 @@ function renderTable() {
 
     tr.addEventListener('click', () => selectLead(lead, tr));
     
+    // Add event listeners to copy buttons
+    const copyBtns = tr.querySelectorAll('.copy-cell-btn');
+    copyBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent row selection
+        const textToCopy = btn.getAttribute('data-copy');
+        if (textToCopy) {
+          navigator.clipboard.writeText(textToCopy).then(() => {
+            showToast('Copied to clipboard!');
+            // Visual feedback: change icon to checkmark temporarily
+            const icon = btn.querySelector('i');
+            icon.className = 'fa-solid fa-check';
+            icon.style.color = 'var(--success)';
+            setTimeout(() => {
+              icon.className = 'fa-regular fa-copy';
+              icon.style.color = '';
+            }, 1500);
+          }).catch(err => {
+            console.error('Failed to copy: ', err);
+            showToast('Failed to copy.');
+          });
+        }
+      });
+    });
+    
     // Add event listener to delete button
     const deleteBtn = tr.querySelector('.delete-row-btn');
     deleteBtn.addEventListener('click', async (e) => {
@@ -526,6 +580,7 @@ function renderTable() {
           
           if (selectedLead && selectedLead.id === lead.id) {
             selectedLead = null;
+            detailsPanel.style.display = 'none';
             detailsEmptyState.style.display = 'flex';
             detailsContent.style.display = 'none';
           }
@@ -638,7 +693,7 @@ tabButtons.forEach(btn => {
     });
     
     btn.classList.add('active');
-    btn.style.borderBottom = '2px solid var(--accent-primary)';
+    btn.style.borderBottom = '2px solid var(--primary)';
     btn.style.color = 'var(--text-primary)';
     
     const targetTab = btn.getAttribute('data-tab');
@@ -662,9 +717,10 @@ function selectLead(lead, rowEl) {
     rowEl.classList.add('selected');
   }
 
-  // Show details panel
-  detailsEmptyState.style.display = 'none';
+  // Show details panel modal overlay
+  detailsPanel.style.display = 'flex';
   detailsContent.style.display = 'block';
+  detailsEmptyState.style.display = 'none';
 
   // Basic Info
   detailName.textContent = lead.business_name;
@@ -930,8 +986,9 @@ btnDeleteLead.addEventListener('click', async () => {
     
     showToast('Lead deleted successfully.');
     
-    // Clear selection
+    // Clear selection and hide modal
     selectedLead = null;
+    detailsPanel.style.display = 'none';
     detailsEmptyState.style.display = 'flex';
     detailsContent.style.display = 'none';
     
@@ -1200,6 +1257,7 @@ if (clearDatabaseBtn) {
         await safeFetchJson('/api/leads', { method: 'DELETE' });
         showToast('Database cleared successfully.');
         selectedLead = null;
+        detailsPanel.style.display = 'none';
         detailsEmptyState.style.display = 'flex';
         detailsContent.style.display = 'none';
         fetchLeads();
@@ -1207,6 +1265,26 @@ if (clearDatabaseBtn) {
         console.error(error);
         showToast('Error clearing database.');
       }
+    }
+  });
+}
+
+// --- MODAL CLOSE BUTTON & CLICK OUTSIDE ---
+const btnCloseModal = document.getElementById('btn-close-modal');
+if (btnCloseModal) {
+  btnCloseModal.addEventListener('click', () => {
+    selectedLead = null;
+    detailsPanel.style.display = 'none';
+    document.querySelectorAll('#leads-table-body tr').forEach(r => r.classList.remove('selected'));
+  });
+}
+
+if (detailsPanel) {
+  detailsPanel.addEventListener('click', (e) => {
+    if (e.target === detailsPanel) {
+      selectedLead = null;
+      detailsPanel.style.display = 'none';
+      document.querySelectorAll('#leads-table-body tr').forEach(r => r.classList.remove('selected'));
     }
   });
 }

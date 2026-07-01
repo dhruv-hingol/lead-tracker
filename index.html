@@ -1,390 +1,682 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lead Tracker — Local Business Lead Finder & CRM</title>
-  <link rel="stylesheet" href="styles.css">
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body>
-  <div class="app-container">
-    <!-- Header -->
-    <header>
-      <div class="logo-section">
-        <h1><i class="fa-solid fa-compass-drafting"></i> Lead Tracker</h1>
-        <p>Local Business Lead Finder & Outreach CRM</p>
-      </div>
-      <div class="header-actions">
-        <button class="btn btn-secondary" id="btn-export-csv"><i class="fa-solid fa-download"></i> Export CSV</button>
-        <div class="upload-btn-wrapper">
-          <button class="btn-upload"><i class="fa-solid fa-file-csv"></i> Import CSV</button>
-          <input type="file" id="csv-upload-input" accept=".csv" />
-        </div>
-      </div>
-    </header>
-
-    <!-- Dashboard Content -->
-    <div class="dashboard-grid">
-      
-      <!-- Main Panel (Scanner, Stats & Table) -->
-      <div class="main-panel">
-        
-        <!-- Scanner Card -->
-        <div class="scanner-card">
-          <h3 class="card-title"><i class="fa-solid fa-magnifying-glass-location"></i> Find New Leads</h3>
-          <div class="scanner-form">
-            <div class="input-field">
-              <label for="scan-country">Country</label>
-              <select id="scan-country">
-                <option value="IN">India</option>
-                <option value="US">United States</option>
-                <option value="GB">United Kingdom</option>
-                <option value="CA">Canada</option>
-                <option value="AU">Australia</option>
-              </select>
-            </div>
-            <div class="input-field">
-              <label for="scan-state">State</label>
-              <select id="scan-state">
-                <!-- Dynamically populated via JS -->
-              </select>
-            </div>
-            <div class="input-field">
-              <label for="scan-city">City</label>
-              <input type="text" id="scan-city" placeholder="e.g. Ahmedabad">
-            </div>
-            <div class="input-field">
-              <label for="scan-area">Area / Neighborhood</label>
-              <input type="text" id="scan-area" placeholder="e.g. C G Road">
-            </div>
-            <div class="input-field">
-              <label for="scan-category">Business Category</label>
-              <input type="text" id="scan-category" placeholder="e.g. restaurants, dentists, salons">
-            </div>
-            <div class="input-field">
-              <label for="scan-api-key">Google Places API Key</label>
-              <input type="password" id="scan-api-key" placeholder="Enter API key (or uses server env)">
-            </div>
-            <button class="btn" id="btn-start-scan"><i class="fa-solid fa-play"></i> Start Scan</button>
-          </div>
-          
-          <!-- Scan Progress Bar -->
-          <div class="scan-progress-container" id="scan-progress-container" style="display: none;">
-            <div class="progress-info">
-              <span id="scan-progress-message">Scanning businesses...</span>
-              <span id="scan-progress-percent">0%</span>
-            </div>
-            <div class="progress-bar-track">
-              <div class="progress-bar-fill" id="scan-progress-bar-fill" style="width: 0%;"></div>
-            </div>
-          </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lead Tracker — Local Business Lead Finder & CRM</title>
+    <link rel="stylesheet" href="style.css" />
+    <!-- FontAwesome Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar">
+        <div class="sidebar-logo">
+          <h1><i class="fa-solid fa-compass-drafting"></i> Lead Tracker</h1>
+          <p>Operational Mastery</p>
         </div>
 
-        <!-- Stats Row -->
-        <div class="stats-container">
-          <div class="stat-card">
-            <span class="stat-label">Total Leads</span>
-            <span class="stat-value" id="stat-total-leads">0</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label">No Website / Dead Link</span>
-            <span class="stat-value highlight-red" id="stat-prospects">0</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label">Needs Upgrade</span>
-            <span class="stat-value highlight-orange" id="stat-needs-upgrade">0</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label">Outreach Success</span>
-            <span class="stat-value highlight-green" id="stat-won">0</span>
-          </div>
-        </div>
-
-        <!-- Filters & Search -->
-        <div class="controls-row">
-          <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="search-input" placeholder="Search by name, address, category...">
-          </div>
-          <button id="clear-database-btn" style="background-color: var(--error); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; font-size: 0.85rem; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
-            <i class="fa-solid fa-trash-can"></i> Clear Data
+        <nav class="sidebar-menu">
+          <button class="sidebar-item active">
+            <i class="fa-solid fa-chart-pie"></i> Dashboard
           </button>
-          <div class="filter-group-container">
-            <div class="filter-row">
-              <span class="filter-label">Website:</span>
-              <div class="filter-group" id="filter-website">
-                <button class="filter-btn active" data-filter="all">All</button>
-                <button class="filter-btn" data-filter="no_website">No Website</button>
-                <button class="filter-btn" data-filter="dead_link">Dead Link</button>
-                <button class="filter-btn" data-filter="needs_improvement">Needs Upgrade</button>
-                <button class="filter-btn" data-filter="good">Good</button>
-              </div>
-            </div>
-            <div class="filter-row" style="margin-top: 0.5rem;">
-              <span class="filter-label">Outreach:</span>
-              <div class="filter-group" id="filter-outreach">
-                <button class="filter-btn active" data-filter="all">All</button>
-                <button class="filter-btn" data-filter="New">New</button>
-                <button class="filter-btn" data-filter="Contacted">Contacted</button>
-                <button class="filter-btn" data-filter="Replied">Replied</button>
-                <button class="filter-btn" data-filter="Won">Won</button>
-              </div>
-            </div>
+          <button class="sidebar-item" id="btn-menu-finder">
+            <i class="fa-solid fa-magnifying-glass-location"></i> Lead Finder
+          </button>
+          <button class="sidebar-item" id="btn-menu-crm">
+            <i class="fa-solid fa-address-card"></i> CRM
+          </button>
+          <button class="sidebar-item" id="btn-menu-outreach">
+            <i class="fa-solid fa-paper-plane"></i> Outreach
+          </button>
+          <button class="sidebar-item" id="btn-menu-analytics">
+            <i class="fa-solid fa-chart-line"></i> Analytics
+          </button>
+        </nav>
+
+        <div class="sidebar-plan">
+          <button class="btn w-100">Upgrade Plan</button>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="#" class="sidebar-footer-item"
+            ><i class="fa-solid fa-gear"></i> Settings</a
+          >
+          <a href="#" class="sidebar-footer-item"
+            ><i class="fa-solid fa-circle-question"></i> Support</a
+          >
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="main-content">
+        <!-- Top Search & Action Bar -->
+        <div class="main-header">
+          <div class="header-title">
+            <h2
+              style="
+                font-family: var(--font-display);
+                font-weight: 800;
+                font-size: 1.25rem;
+              "
+            >
+              Dashboard
+            </h2>
           </div>
-        </div>
 
-        <!-- Table -->
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Business Name</th>
-                <th>Category & City</th>
-                <th>Phone</th>
-                <th>Email</th>
-                <th>Website</th>
-                <th>Website Status</th>
-                <th>Outreach</th>
-                <th style="text-align: center;">Action</th>
-              </tr>
-            </thead>
-            <tbody id="leads-table-body">
-              <tr>
-                <td colspan="8" style="text-align: center; padding: 4rem; color: var(--text-muted);">
-                  <i class="fa-solid fa-database" style="font-size: 2.5rem; margin-bottom: 1rem; display: block; opacity: 0.5;"></i>
-                  Loading leads from database...
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <!-- Pagination -->
-        <div class="pagination-row" style="display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; border-top: 1px solid var(--border-color); flex-wrap: wrap; gap: 1rem;">
-          <div style="font-size: 0.85rem; color: var(--text-secondary);" id="pagination-info-text">Showing 0 to 0 of 0 leads</div>
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <button id="btn-prev-page" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"><i class="fa-solid fa-chevron-left"></i> Prev</button>
-            <span id="page-indicator" style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">Page 1 of 1</span>
-            <button id="btn-next-page" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Next <i class="fa-solid fa-chevron-right"></i></button>
+          <div class="header-tabs">
+            <button class="header-tab active">Leads</button>
+            <button class="header-tab">Analytics</button>
+            <button class="header-tab">History</button>
           </div>
-        </div>
-      </div>
 
-      <!-- Sidebar Details & Outreach Assistant -->
-      <div class="details-panel" id="details-panel">
-        <div class="empty-state" id="details-empty-state">
-          <i class="fa-solid fa-circle-info"></i>
-          <h3>No Lead Selected</h3>
-          <p>Select a business from the list to view detailed audit reports, manage contact info, and launch the Outreach Assistant.</p>
-        </div>
-
-        <div id="details-content" style="display: none;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <h2 class="panel-title" id="detail-name" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">Business Name</h2>
-            <button class="btn btn-secondary" id="btn-delete-lead" style="padding: 0.4rem 0.6rem; color: var(--error); border-color: rgba(239,68,68,0.2);" title="Delete Lead">
-              <i class="fa-regular fa-trash-can"></i>
+          <div class="header-right">
+            <button class="btn btn-secondary btn-sm" id="btn-export-csv">
+              <i class="fa-solid fa-download"></i> Export CSV
             </button>
+            <div class="upload-btn-wrapper">
+              <button class="btn-upload btn-sm">
+                <i class="fa-solid fa-file-csv"></i> Import CSV
+              </button>
+              <input type="file" id="csv-upload-input" accept=".csv" />
+            </div>
+            <div class="profile-pic">
+              <i class="fa-solid fa-circle-user"></i>
+            </div>
           </div>
-          
-          <div class="quick-meta-badges" style="margin-top: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <span class="badge" id="detail-category-badge" style="background: var(--bg-tertiary);">Category</span>
-            <span class="badge" id="detail-country-badge" style="background: var(--bg-tertiary);">Country</span>
-          </div>
-          
-          <!-- Tab Navigation -->
-          <div class="tab-nav" style="display: flex; border-bottom: 1px solid var(--border-color); margin-top: 1.5rem; margin-bottom: 1rem; gap: 1rem;">
-            <button class="tab-btn active" data-tab="tab-crm" style="background: none; border: none; color: var(--text-primary); border-bottom: 2px solid var(--accent-primary); padding-bottom: 0.5rem; cursor: pointer; font-weight: 600; font-size: 0.9rem;">CRM & Contact</button>
-            <button class="tab-btn" data-tab="tab-audit" style="background: none; border: none; color: var(--text-secondary); padding-bottom: 0.5rem; cursor: pointer; font-weight: 600; font-size: 0.9rem;">Website Audit</button>
-          </div>
+        </div>
 
-          <!-- CRM Tab Content -->
-          <div class="tab-content" id="tab-crm">
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-              
-              <!-- Address and Phone -->
-              <div class="info-group">
-                <span class="info-label">Address</span>
-                <span class="info-value" id="detail-address">123 Main St, Ahmedabad</span>
+        <!-- Dashboard Stats & Form -->
+        <div class="dashboard-body">
+          <!-- Stats Row -->
+          <div class="stats-container">
+            <div class="stat-card">
+              <div>
+                <span class="stat-label">Total Leads</span>
+                <span class="stat-value" id="stat-total-leads">0</span>
+                <span class="stat-subtext text-success"
+                  ><i class="fa-solid fa-arrow-trend-up"></i> +12% this
+                  month</span
+                >
               </div>
-              <div class="info-group">
-                <span class="info-label">Phone Number</span>
-                <span class="info-value" id="detail-phone">+91 98765 43210</span>
+              <div class="stat-icon icon-blue">
+                <i class="fa-solid fa-users"></i>
               </div>
-              <div class="info-group">
-                <span class="info-label">Google Maps Link</span>
-                <span class="info-value"><a href="#" id="detail-maps-url" target="_blank">Open in Google Maps <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.8rem;"></i></a></span>
+            </div>
+
+            <div class="stat-card">
+              <div>
+                <span class="stat-label">Dead Links</span>
+                <span class="stat-value highlight-red" id="stat-prospects"
+                  >0</span
+                >
+                <span class="stat-subtext text-danger"
+                  >Needs immediate action</span
+                >
               </div>
-
-              <!-- Editable Contact Info -->
-              <div class="crm-edit-section" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 0.8rem; margin-top: 0.5rem;">
-                <h4 style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); padding-bottom: 0.4rem; margin-bottom: 0.2rem;"><i class="fa-solid fa-address-card"></i> Contact Information</h4>
-                
-                <div class="input-field">
-                  <label for="detail-contact-name">Contact Person Name</label>
-                  <input type="text" id="detail-contact-name" placeholder="Owner or Manager Name">
-                </div>
-                
-                <div class="input-field">
-                  <label for="detail-contact-email" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>Contact Email</span>
-                    <span id="detail-email-confidence" class="badge" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">Not Found</span>
-                  </label>
-                  <input type="text" id="detail-contact-email" placeholder="email@business.com">
-                </div>
-                
-                <!-- Email Guesser (for domains) -->
-                <div class="emails-box" id="email-guesser-box" style="display: none; margin-top: 0.5rem; background: rgba(99, 102, 241, 0.03); border-color: rgba(99, 102, 241, 0.15);">
-                  <div class="emails-header">
-                    <span style="color: var(--accent-primary); font-size: 0.75rem;"><i class="fa-solid fa-wand-magic-sparkles"></i> Guessed Patterns</span>
-                  </div>
-                  <div class="emails-list" id="emails-list-container">
-                    <!-- Javascript will render guessed emails here -->
-                  </div>
-                </div>
+              <div class="stat-icon icon-red">
+                <i class="fa-solid fa-link-slash"></i>
               </div>
+            </div>
 
-              <!-- CRM Status & Notes -->
-              <div class="crm-status-section" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 0.8rem;">
-                <h4 style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); padding-bottom: 0.4rem; margin-bottom: 0.2rem;"><i class="fa-solid fa-chart-line"></i> Lead Status & Notes</h4>
-                
-                <div class="input-field">
-                  <label for="detail-outreach-status">Outreach Status</label>
-                  <select id="detail-outreach-status">
-                    <option value="New">New Lead</option>
-                    <option value="Contacted">Contacted (Pitch Sent)</option>
-                    <option value="Replied">Replied (In Conversation)</option>
-                    <option value="Won">Won (Deal Closed)</option>
-                    <option value="Not Interested">Not Interested</option>
-                  </select>
-                </div>
-                
-                <div class="input-field">
-                  <label for="detail-notes">Internal Notes</label>
-                  <textarea id="detail-notes" rows="3" placeholder="Add notes about calls, emails, or follow-ups..." style="background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.6rem; border-radius: 8px; font-size: 0.85rem; resize: vertical; font-family: var(--font-sans);"></textarea>
-                </div>
+            <div class="stat-card">
+              <div>
+                <span class="stat-label">Needs Upgrade</span>
+                <span
+                  class="stat-value highlight-orange"
+                  id="stat-needs-upgrade"
+                  >0</span
+                >
+                <span class="stat-subtext text-warning"
+                  >High conversion potential</span
+                >
               </div>
-
-              <button class="btn" id="btn-save-crm" style="width: 100%;"><i class="fa-regular fa-floppy-disk"></i> Save Lead Details</button>
-
-              <!-- Outreach Assistant Panel -->
-              <div class="outreach-section" style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
-                <h3 style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
-                  <i class="fa-solid fa-paper-plane" style="color: var(--accent-primary);"></i> Outreach Email Composer
-                </h3>
-
-                <!-- Outreach Template Selection -->
-                <div class="input-field">
-                  <label for="template-select">Email Template</label>
-                  <select id="template-select">
-                    <option value="no-website">No Website (Pitch New Site)</option>
-                    <option value="broken-website">Broken / Dead Link (Fix & Redesign)</option>
-                    <option value="slow-website">Slow / Basic Website (Modern Upgrade)</option>
-                  </select>
-                </div>
-
-                <!-- Email Template Content Box -->
-                <div class="template-box">
-                  <div class="template-header">
-                    <span class="info-label">Email Draft</span>
-                    <button class="btn btn-secondary" id="btn-copy-template" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
-                      <i class="fa-regular fa-copy"></i> Copy Draft
-                    </button>
-                  </div>
-                  <div class="template-content" id="template-body">
-                    <!-- Draft content goes here -->
-                  </div>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="quick-actions">
-                  <button class="btn" id="btn-send-email"><i class="fa-solid fa-envelope"></i> Send Email</button>
-                  <a href="#" class="btn btn-secondary" id="btn-call-phone" style="text-decoration: none;"><i class="fa-solid fa-phone"></i> Call Business</a>
-                </div>
+              <div class="stat-icon icon-orange">
+                <i class="fa-solid fa-circle-exclamation"></i>
               </div>
+            </div>
 
+            <div class="stat-card">
+              <div>
+                <span class="stat-label">Outreach Success</span>
+                <span class="stat-value highlight-green" id="stat-won">0</span>
+                <span class="stat-subtext text-success"
+                  ><i class="fa-solid fa-circle-check"></i> Top Tier
+                  Performance</span
+                >
+              </div>
+              <div class="stat-icon icon-green">
+                <i class="fa-solid fa-trophy"></i>
+              </div>
             </div>
           </div>
 
-          <!-- Audit Tab Content -->
-          <div class="tab-content" id="tab-audit" style="display: none;">
-            <div style="display: flex; flex-direction: column; gap: 1.2rem;">
-              
-              <!-- Website URL Badge -->
-              <div class="info-group">
-                <span class="info-label">Website URL</span>
-                <div id="detail-website-badge" style="margin-top: 0.25rem;"></div>
+          <!-- Scanner Card -->
+          <div class="scanner-card">
+            <h3 class="card-title">
+              <i class="fa-solid fa-compass"></i> Find New Leads
+            </h3>
+            <div class="scanner-form">
+              <div class="input-field">
+                <label for="scan-country">Country</label>
+                <select id="scan-country">
+                  <option value="IN">India</option>
+                  <option value="US">United States</option>
+                  <option value="GB">United Kingdom</option>
+                  <option value="CA">Canada</option>
+                  <option value="AU">Australia</option>
+                </select>
               </div>
-              
-              <!-- PageSpeed Performance Score -->
-              <div class="pagespeed-score-box" id="detail-pagespeed-box" style="display: flex; align-items: center; gap: 1.5rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.25rem;">
-                <div class="score-ring-container" style="position: relative; width: 70px; height: 70px;">
-                  <svg viewBox="0 0 36 36" style="width: 100%; height: 100%;">
-                    <path style="fill: none; stroke: var(--border-color); stroke-width: 3.5;" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                    <path id="score-ring-fill" style="fill: none; stroke: var(--error); stroke-width: 3.5; stroke-dasharray: 0, 100; stroke-linecap: round; transition: stroke-dasharray 0.6s ease;" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                  </svg>
-                  <div id="score-ring-text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: var(--font-display); font-size: 1.2rem; font-weight: 700;">N/A</div>
-                </div>
-                <div>
-                  <h4 style="font-size: 0.95rem; font-weight: 600;">PageSpeed Mobile Score</h4>
-                  <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">Google Lighthouse performance index.</p>
-                </div>
+              <div class="input-field">
+                <label for="scan-state">State</label>
+                <select id="scan-state">
+                  <!-- Dynamically populated via JS -->
+                </select>
               </div>
-              
-              <!-- Audit Metrics Grid -->
-              <div class="audit-metrics-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div class="audit-metric-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.25rem;">
-                  <span class="info-label">Load Time</span>
-                  <span class="audit-metric-value" id="detail-load-time" style="font-size: 1.1rem; font-weight: 700; font-family: var(--font-display);">N/A</span>
-                </div>
-                <div class="audit-metric-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.25rem;">
-                  <span class="info-label">Copyright Year</span>
-                  <span class="audit-metric-value" id="detail-copyright-year" style="font-size: 1.1rem; font-weight: 700; font-family: var(--font-display);">N/A</span>
-                </div>
+              <div class="input-field">
+                <label for="scan-city">City</label>
+                <input
+                  type="text"
+                  id="scan-city"
+                  placeholder="e.g. San Francisco"
+                />
+              </div>
+              <div class="input-field">
+                <label for="scan-area">Area / Neighborhood</label>
+                <input type="text" id="scan-area" placeholder="e.g. SoMa" />
+              </div>
+              <div class="input-field">
+                <label for="scan-category">Business Category</label>
+                <input
+                  type="text"
+                  id="scan-category"
+                  placeholder="e.g. restaurants, dentists, salons"
+                />
+              </div>
+              <div class="input-field">
+                <label for="scan-api-key">Google Places API Key</label>
+                <input
+                  type="password"
+                  id="scan-api-key"
+                  placeholder="Enter API key (or uses server env)"
+                />
+              </div>
+              <button class="btn" id="btn-start-scan">
+                <i class="fa-solid fa-play"></i> Start Scan
+              </button>
+            </div>
+
+            <!-- Scan Progress Bar -->
+            <div
+              class="scan-progress-container"
+              id="scan-progress-container"
+              style="display: none"
+            >
+              <div class="progress-info">
+                <span id="scan-progress-message">Scanning businesses...</span>
+                <span id="scan-progress-percent">0%</span>
+              </div>
+              <div class="progress-bar-track">
+                <div
+                  class="progress-bar-fill"
+                  id="scan-progress-bar-fill"
+                  style="width: 0%"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filters Row & Active Leads Title -->
+          <div class="active-leads-header">
+            <div class="active-leads-title">
+              <h3>Active Leads</h3>
+              <div class="active-leads-filters">
+                <button class="pill-btn active">All</button>
+                <button class="pill-btn">High Priority</button>
+              </div>
+            </div>
+
+            <div class="header-search-container">
+              <div class="header-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input
+                  type="text"
+                  id="search-input"
+                  placeholder="Search active leads..."
+                />
               </div>
 
-              <!-- Local Audits Checklist -->
-              <div class="checklist-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.8rem;">
-                <h4 style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); padding-bottom: 0.4rem; margin-bottom: 0.2rem;"><i class="fa-solid fa-clipboard-check"></i> Standard Checks</h4>
-                
-                <div class="checklist-item" id="chk-https" style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
-                  <span>HTTPS Secured</span>
-                  <i class="fa-solid fa-circle-question" style="color: var(--text-muted);"></i>
-                </div>
-                
-                <div class="checklist-item" id="chk-viewport" style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
-                  <span>Mobile Viewport Presence</span>
-                  <i class="fa-solid fa-circle-question" style="color: var(--text-muted);"></i>
-                </div>
-                
-                <div class="checklist-item" id="chk-copyright" style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
-                  <span>Modern Copyright Year</span>
-                  <i class="fa-solid fa-circle-question" style="color: var(--text-muted);"></i>
+              <button id="clear-database-btn">
+                <i class="fa-solid fa-trash-can"></i> Clear Data
+              </button>
+            </div>
+          </div>
+
+          <!-- Controls (Table Filters) -->
+          <div class="controls-row">
+            <div class="filter-group-container">
+              <div class="filter-row">
+                <span class="filter-label">Website:</span>
+                <div class="filter-group" id="filter-website">
+                  <button class="filter-btn active" data-filter="all">
+                    All
+                  </button>
+                  <button class="filter-btn" data-filter="no_website">
+                    No Website
+                  </button>
+                  <button class="filter-btn" data-filter="dead_link">
+                    Dead Link
+                  </button>
+                  <button class="filter-btn" data-filter="needs_improvement">
+                    Needs Upgrade
+                  </button>
+                  <button class="filter-btn" data-filter="good">Good</button>
                 </div>
               </div>
-
-              <!-- Audit Notes Box -->
-              <div class="info-group">
-                <span class="info-label">Audit Notes & Flaws</span>
-                <div id="detail-audit-notes" style="background: rgba(239, 68, 68, 0.03); border: 1px solid rgba(239, 68, 68, 0.1); color: #fca5a5; padding: 1rem; border-radius: 12px; font-size: 0.85rem; line-height: 1.4;">
-                  No website to audit.
+              <div class="filter-row">
+                <span class="filter-label">Outreach:</span>
+                <div class="filter-group" id="filter-outreach">
+                  <button class="filter-btn active" data-filter="all">
+                    All
+                  </button>
+                  <button class="filter-btn" data-filter="New">New</button>
+                  <button class="filter-btn" data-filter="Contacted">
+                    Contacted
+                  </button>
+                  <button class="filter-btn" data-filter="Replied">
+                    Replied
+                  </button>
+                  <button class="filter-btn" data-filter="Won">Won</button>
                 </div>
               </div>
+            </div>
+          </div>
 
+          <!-- Table -->
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Company</th>
+                  <th>Location</th>
+                  <th>Phone</th>
+                  <th>Email</th>
+                  <th>Website</th>
+                  <th>Website Status</th>
+                  <th>Outreach</th>
+                  <th style="text-align: center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="leads-table-body">
+                <tr>
+                  <td colspan="8" class="table-state-cell">
+                    <i class="fa-solid fa-database table-state-icon"></i>
+                    Loading leads from database...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="pagination-row">
+            <div id="pagination-info-text">Showing 0 to 0 of 0 leads</div>
+            <div class="pagination-controls">
+              <button id="btn-prev-page" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-chevron-left"></i> Prev
+              </button>
+              <span id="page-indicator" class="pagination-indicator"
+                >Page 1 of 1</span
+              >
+              <button id="btn-next-page" class="btn btn-sm">
+                Next <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Details Modal Overlay -->
+      <div
+        class="details-modal-overlay"
+        id="details-panel"
+        style="display: none"
+      >
+        <div class="details-modal-card">
+          <button class="modal-close-btn" id="btn-close-modal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+
+          <!-- Empty State Placeholder (hides when content loaded) -->
+          <div
+            class="empty-state"
+            id="details-empty-state"
+            style="display: none"
+          >
+            <i class="fa-solid fa-circle-info"></i>
+            <h3>No Lead Selected</h3>
+            <p>
+              Select a business from the list to view detailed audit reports,
+              manage contact info, and launch the Outreach Assistant.
+            </p>
+          </div>
+
+          <!-- Modal details content -->
+          <div id="details-content" style="display: none">
+            <div class="details-header">
+              <h2 class="panel-title details-header-title" id="detail-name">
+                Business Name
+              </h2>
+              <button
+                class="btn btn-secondary btn-delete-lead"
+                id="btn-delete-lead"
+                title="Delete Lead"
+              >
+                <i class="fa-regular fa-trash-can"></i>
+              </button>
+            </div>
+
+            <div class="details-meta-badges">
+              <span class="badge details-meta-badge" id="detail-category-badge"
+                >Category</span
+              >
+              <span class="badge details-meta-badge" id="detail-country-badge"
+                >Country</span
+              >
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="tab-nav">
+              <button class="tab-btn active" data-tab="tab-crm">
+                CRM & Contact
+              </button>
+              <button class="tab-btn" data-tab="tab-audit">
+                Website Audit
+              </button>
+            </div>
+
+            <!-- CRM Tab Content -->
+            <div class="tab-content" id="tab-crm">
+              <div class="tab-content-inner">
+                <div class="modal-col">
+                  <!-- Address and Phone -->
+                  <div class="info-group">
+                    <span class="info-label">Address</span>
+                    <span class="info-value" id="detail-address"
+                      >123 Main St, Ahmedabad</span
+                    >
+                  </div>
+                  <div class="info-group">
+                    <span class="info-label">Phone Number</span>
+                    <span class="info-value" id="detail-phone"
+                      >+91 98765 43210</span
+                    >
+                  </div>
+                  <div class="info-group">
+                    <span class="info-label">Google Maps Link</span>
+                    <span class="info-value"
+                      ><a href="#" id="detail-maps-url" target="_blank"
+                        >Open in Google Maps
+                        <i
+                          class="fa-solid fa-arrow-up-right-from-square"
+                          style="font-size: 0.8rem"
+                        ></i></a
+                    ></span>
+                  </div>
+
+                  <!-- Editable Contact Info -->
+                  <div class="crm-edit-section">
+                    <h4>
+                      <i class="fa-solid fa-address-card"></i> Contact
+                      Information
+                    </h4>
+
+                    <div class="input-field">
+                      <label for="detail-contact-name"
+                        >Contact Person Name</label
+                      >
+                      <input
+                        type="text"
+                        id="detail-contact-name"
+                        placeholder="Owner or Manager Name"
+                      />
+                    </div>
+
+                    <div class="input-field">
+                      <label for="detail-contact-email">
+                        <span>Contact Email</span>
+                        <span id="detail-email-confidence" class="badge"
+                          >Not Found</span
+                        >
+                      </label>
+                      <input
+                        type="text"
+                        id="detail-contact-email"
+                        placeholder="email@business.com"
+                      />
+                    </div>
+
+                    <!-- Email Guesser (for domains) -->
+                    <div
+                      class="emails-box"
+                      id="email-guesser-box"
+                      style="display: none"
+                    >
+                      <div class="emails-header">
+                        <span
+                          ><i class="fa-solid fa-wand-magic-sparkles"></i>
+                          Guessed Patterns</span
+                        >
+                      </div>
+                      <div class="emails-list" id="emails-list-container">
+                        <!-- Javascript will render guessed emails here -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="modal-col">
+                  <!-- CRM Status & Notes -->
+                  <div class="crm-status-section">
+                    <h4>
+                      <i class="fa-solid fa-chart-line"></i> Lead Status & Notes
+                    </h4>
+
+                    <div class="input-field">
+                      <label for="detail-outreach-status"
+                        >Outreach Status</label
+                      >
+                      <select id="detail-outreach-status">
+                        <option value="New">New Lead</option>
+                        <option value="Contacted">
+                          Contacted (Pitch Sent)
+                        </option>
+                        <option value="Replied">
+                          Replied (In Conversation)
+                        </option>
+                        <option value="Won">Won (Deal Closed)</option>
+                        <option value="Not Interested">Not Interested</option>
+                      </select>
+                    </div>
+
+                    <div class="input-field">
+                      <label for="detail-notes">Internal Notes</label>
+                      <textarea
+                        id="detail-notes"
+                        rows="3"
+                        placeholder="Add notes about calls, emails, or follow-ups..."
+                      ></textarea>
+                    </div>
+                  </div>
+
+                  <button
+                    class="btn w-100"
+                    id="btn-save-crm"
+                    style="margin-bottom: 1.5rem"
+                  >
+                    <i class="fa-regular fa-floppy-disk"></i> Save Lead Details
+                  </button>
+
+                  <!-- Outreach Assistant Panel -->
+                  <div
+                    class="outreach-section"
+                    style="border-top: none; padding-top: 0; margin-top: 0"
+                  >
+                    <h3>
+                      <i class="fa-solid fa-paper-plane"></i> Outreach Email
+                      Composer
+                    </h3>
+
+                    <!-- Outreach Template Selection -->
+                    <div class="input-field">
+                      <label for="template-select">Email Template</label>
+                      <select id="template-select">
+                        <option value="no-website">
+                          No Website (Pitch New Site)
+                        </option>
+                        <option value="broken-website">
+                          Broken / Dead Link (Fix & Redesign)
+                        </option>
+                        <option value="slow-website">
+                          Slow / Basic Website (Modern Upgrade)
+                        </option>
+                      </select>
+                    </div>
+
+                    <!-- Email Template Content Box -->
+                    <div class="template-box">
+                      <div class="template-header">
+                        <span class="info-label">Email Draft</span>
+                        <button
+                          class="btn btn-secondary btn-sm"
+                          id="btn-copy-template"
+                        >
+                          <i class="fa-regular fa-copy"></i> Copy Draft
+                        </button>
+                      </div>
+                      <div
+                        class="template-content"
+                        id="template-body"
+                        style="height: 120px"
+                      >
+                        <!-- Draft content goes here -->
+                      </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="quick-actions">
+                      <button class="btn" id="btn-send-email">
+                        <i class="fa-solid fa-envelope"></i> Send Email
+                      </button>
+                      <a href="#" class="btn btn-secondary" id="btn-call-phone"
+                        ><i class="fa-solid fa-phone"></i> Call Business</a
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Audit Tab Content -->
+            <div class="tab-content" id="tab-audit" style="display: none">
+              <div class="tab-content-inner">
+                <div class="modal-col">
+                  <!-- Website URL Badge -->
+                  <div class="info-group">
+                    <span class="info-label">Website URL</span>
+                    <div id="detail-website-badge"></div>
+                  </div>
+
+                  <!-- PageSpeed Performance Score -->
+                  <div
+                    class="pagespeed-score-box"
+                    id="detail-pagespeed-box"
+                    style="margin-top: 0.5rem"
+                  >
+                    <div class="score-ring-container">
+                      <svg viewBox="0 0 36 36">
+                        <path
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path
+                          id="score-ring-fill"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                      </svg>
+                      <div id="score-ring-text">N/A</div>
+                    </div>
+                    <div>
+                      <h4>PageSpeed Mobile Score</h4>
+                      <p>Google Lighthouse performance index.</p>
+                    </div>
+                  </div>
+
+                  <!-- Audit Metrics Grid -->
+                  <div class="audit-metrics-grid" style="margin-top: 0.5rem">
+                    <div class="audit-metric-card">
+                      <span class="info-label">Load Time</span>
+                      <span class="audit-metric-value" id="detail-load-time"
+                        >N/A</span
+                      >
+                    </div>
+                    <div class="audit-metric-card">
+                      <span class="info-label">Copyright Year</span>
+                      <span
+                        class="audit-metric-value"
+                        id="detail-copyright-year"
+                        >N/A</span
+                      >
+                    </div>
+                  </div>
+                </div>
+
+                <div class="modal-col">
+                  <!-- Local Audits Checklist -->
+                  <div class="checklist-card" style="margin-bottom: 1rem">
+                    <h4>
+                      <i class="fa-solid fa-clipboard-check"></i> Standard
+                      Checks
+                    </h4>
+
+                    <div class="checklist-item" id="chk-https">
+                      <span>HTTPS Secured</span>
+                      <i class="fa-solid fa-circle-question"></i>
+                    </div>
+
+                    <div class="checklist-item" id="chk-viewport">
+                      <span>Mobile Viewport Presence</span>
+                      <i class="fa-solid fa-circle-question"></i>
+                    </div>
+
+                    <div class="checklist-item" id="chk-copyright">
+                      <span>Modern Copyright Year</span>
+                      <i class="fa-solid fa-circle-question"></i>
+                    </div>
+                  </div>
+
+                  <!-- Audit Notes Box -->
+                  <div class="info-group">
+                    <span class="info-label">Audit Notes & Flaws</span>
+                    <div id="detail-audit-notes">No website to audit.</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-
     </div>
-  </div>
 
-  <!-- Toast Notification -->
-  <div class="toast" id="toast-notification">
-    <i class="fa-solid fa-circle-check"></i>
-    <span id="toast-message">Action completed successfully!</span>
-  </div>
+    <!-- Toast Notification -->
+    <div class="toast" id="toast-notification">
+      <i class="fa-solid fa-circle-check"></i>
+      <span id="toast-message">Action completed successfully!</span>
+    </div>
 
-  <script src="app.js"></script>
-</body>
+    <script src="app.js"></script>
+  </body>
 </html>

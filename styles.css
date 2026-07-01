@@ -64,13 +64,12 @@ body {
   background: var(--accent-primary);
 }
 
-/* Layout */
 .app-container {
   max-width: 1600px;
   margin: 0 auto;
   padding: 2rem;
-  display: grid;
-  grid-template-rows: auto auto 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 2rem;
   min-height: 100vh;
 }
@@ -149,22 +148,18 @@ header {
   cursor: pointer;
 }
 
-/* Dashboard Grid */
 .dashboard-grid {
-  display: grid;
-  grid-template-columns: 1fr 400px;
+  display: flex;
+  flex-direction: row;
   gap: 2rem;
   align-items: start;
-}
-
-@media (max-width: 1200px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
+  width: 100%;
 }
 
 /* Main Content Area (Leads Table & Filters) */
 .main-panel {
+  flex: 1 1 0%;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -379,6 +374,8 @@ tr.selected {
 
 /* Action Sidebar / Details Panel */
 .details-panel {
+  flex: 0 0 400px;
+  width: 400px;
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
@@ -778,5 +775,162 @@ tr.selected {
   color: var(--text-muted);
   font-weight: 600;
   min-width: 70px;
+}
+
+/* --- COMPLETE RESPONSIVE BREAKPOINTS DESIGN --- */
+
+/* 1. Large Screen Adjustments (max-width: 1400px) */
+@media (max-width: 1400px) {
+  .details-panel {
+    flex: 0 0 360px;
+    width: 360px;
+  }
+}
+
+/* 2. Desktop to Tablet Transition (max-width: 1200px) */
+@media (max-width: 1200px) {
+  .dashboard-grid {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .details-panel {
+    flex: 1 1 auto;
+    width: 100%;
+    position: relative;
+    top: 0;
+    max-height: none;
+  }
+}
+
+/* 3. Small Laptops & Large Tablets (max-width: 1024px) */
+@media (max-width: 1024px) {
+  .app-container {
+    padding: 1.5rem;
+    gap: 1.5rem;
+  }
+
+  .stats-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+  
+  .scanner-form {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .controls-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.25rem;
+  }
+  
+  .search-box {
+    min-width: 0; /* Remove min-width to prevent overflow */
+  }
+
+  #clear-database-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* 4. Medium Tablets & Small Screen Viewport (max-width: 768px) */
+@media (max-width: 768px) {
+  header {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    gap: 1.25rem;
+    padding: 1.5rem;
+  }
+
+  .logo-section h1 {
+    justify-content: center;
+  }
+
+  .header-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 0.75rem;
+  }
+  
+  .header-actions > * {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .scanner-form {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .filter-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  
+  .filter-group {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .filter-btn {
+    flex: 1 1 auto; /* Fluid sizing based on text length, no min-width */
+    text-align: center;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* 5. Mobile Portrait Mode (max-width: 480px) */
+@media (max-width: 480px) {
+  .app-container {
+    padding: 0.75rem;
+    gap: 1rem;
+  }
+
+  .main-panel, .details-panel, header {
+    padding: 1rem;
+    border-radius: 16px;
+  }
+
+  .stats-container {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .scanner-form {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-btn {
+    flex: 1 1 calc(50% - 0.5rem); /* Neatly fits 2 buttons per row */
+  }
+  
+  .input-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .quick-actions {
+    flex-direction: column;
+  }
+  
+  td, th {
+    padding: 0.75rem 1rem;
+  }
+
+  .pagination-row {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .pagination-row > div {
+    text-align: center;
+  }
 }
 

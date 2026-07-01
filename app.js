@@ -17,6 +17,15 @@ const searchInput = document.getElementById('search-input');
 const filterWebsiteBtns = document.querySelectorAll('#filter-website .filter-btn');
 const filterOutreachBtns = document.querySelectorAll('#filter-outreach .filter-btn');
 
+// Pagination Elements
+const btnPrevPage = document.getElementById('btn-prev-page');
+const btnNextPage = document.getElementById('btn-next-page');
+const pageIndicator = document.getElementById('page-indicator');
+const paginationInfoText = document.getElementById('pagination-info-text');
+
+let currentPage = 1;
+const itemsPerPage = 10;
+
 // Scanner Elements
 const scanCountrySelect = document.getElementById('scan-country');
 const scanStateSelect = document.getElementById('scan-state');
@@ -419,10 +428,31 @@ function renderTable() {
         </td>
       </tr>
     `;
+    if (pageIndicator) pageIndicator.textContent = 'Page 1 of 1';
+    if (paginationInfoText) paginationInfoText.textContent = 'Showing 0 to 0 of 0 leads';
+    if (btnPrevPage) btnPrevPage.disabled = true;
+    if (btnNextPage) btnNextPage.disabled = true;
     return;
   }
 
-  filteredLeads.forEach((lead) => {
+  // Calculate pages
+  const totalPages = Math.ceil(filteredLeads.length / itemsPerPage) || 1;
+  if (currentPage > totalPages) {
+    currentPage = totalPages;
+  }
+  
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, filteredLeads.length);
+  const pageLeads = filteredLeads.slice(startIndex, endIndex);
+
+  // Update pagination indicators
+  if (pageIndicator) pageIndicator.textContent = `Page ${currentPage} of ${totalPages}`;
+  if (paginationInfoText) paginationInfoText.textContent = `Showing ${startIndex + 1} to ${endIndex} of ${filteredLeads.length} leads`;
+  
+  if (btnPrevPage) btnPrevPage.disabled = currentPage === 1;
+  if (btnNextPage) btnNextPage.disabled = currentPage === totalPages;
+
+  pageLeads.forEach((lead) => {
     const tr = document.createElement('tr');
     tr.setAttribute('data-id', lead.id);
     if (selectedLead && selectedLead.id === lead.id) {
@@ -548,6 +578,7 @@ function filterAndSearch() {
     return true;
   });
 
+  currentPage = 1; // Reset to page 1 on new filter
   renderTable();
 }
 
@@ -556,6 +587,26 @@ searchInput.addEventListener('input', (e) => {
   activeFilters.search = e.target.value;
   filterAndSearch();
 });
+
+// Pagination button listeners
+if (btnPrevPage) {
+  btnPrevPage.addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--;
+      renderTable();
+    }
+  });
+}
+
+if (btnNextPage) {
+  btnNextPage.addEventListener('click', () => {
+    const totalPages = Math.ceil(filteredLeads.length / itemsPerPage);
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderTable();
+    }
+  });
+}
 
 // Website Filters
 filterWebsiteBtns.forEach(btn => {

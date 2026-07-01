@@ -9,6 +9,7 @@ let activeFilters = {
 };
 let isScanning = false;
 let scanPollInterval = null;
+let currentMainView = 'all'; // 'all', 'priority', 'history'
 
 // DOM Elements
 const csvUploadInput = document.getElementById('csv-upload-input');
@@ -517,6 +518,10 @@ function renderTable() {
     const colorIndex = initials.charCodeAt(0) % circleColors.length;
     const circleBg = circleColors[colorIndex];
 
+    const isFav = lead.is_favorite === 1 || lead.is_favorite === true;
+    const favIconClass = isFav ? 'fa-solid fa-star' : 'fa-regular fa-star';
+    const favColor = isFav ? '#f59e0b' : 'var(--text-muted)';
+
     tr.innerHTML = `
       <td>
         <div class="company-cell">
@@ -535,7 +540,10 @@ function renderTable() {
       <td>${websiteLink}</td>
       <td>${statusBadge}</td>
       <td>${outreachBadge}</td>
-      <td style="text-align: center; vertical-align: middle;">
+      <td style="text-align: center; vertical-align: middle; white-space: nowrap;">
+        <button class="fav-row-btn" style="background: none; border: none; color: ${favColor}; cursor: pointer; padding: 0.25rem 0.5rem; font-size: 1rem; margin-right: 0.25rem; transition: transform var(--transition-fast);" title="${isFav ? 'Remove from Priority' : 'Mark as Priority'}">
+          <i class="${favIconClass}"></i>
+        </button>
         <button class="delete-row-btn" style="background: none; border: none; color: var(--error); cursor: pointer; padding: 0.25rem 0.5rem; font-size: 1rem; opacity: 0.7; transition: opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">
           <i class="fa-solid fa-trash-can"></i>
         </button>
@@ -593,6 +601,37 @@ function renderTable() {
       }
     });
 
+    // Add event listener to favorite button
+    const favBtn = tr.querySelector('.fav-row-btn');
+    if (favBtn) {
+      favBtn.addEventListener('click', async (e) => {
+        e.stopPropagation(); // Prevent row selection
+        const newFavStatus = !(lead.is_favorite === 1 || lead.is_favorite === true);
+        
+        try {
+          await safeFetchJson(`/api/leads/${lead.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_favorite: newFavStatus })
+          });
+          
+          lead.is_favorite = newFavStatus ? 1 : 0;
+          showToast(newFavStatus ? 'Added to Priority list.' : 'Removed from Priority list.');
+          
+          // Update details modal favorite star if this is the selected lead
+          if (selectedLead && selectedLead.id === lead.id) {
+            selectedLead.is_favorite = lead.is_favorite;
+            updateModalFavStar();
+          }
+          
+          filterAndSearch();
+        } catch (error) {
+          console.error(error);
+          showToast('Error updating priority.');
+        }
+      });
+    }
+
     tableBody.appendChild(tr);
   });
 
@@ -630,6 +669,11 @@ function filterAndSearch() {
       if (activeFilters.outreach.toLowerCase() !== status.toLowerCase()) return false;
     }
 
+    // 4. Main Tab View (Priority/Favorite Filter)
+    if (currentMainView === 'priority') {
+      if (lead.is_favorite !== 1 && lead.is_favorite !== true) return false;
+    }
+
     return true;
   });
 
@@ -662,6 +706,30 @@ if (btnNextPage) {
     }
   });
 }
+
+// Main View Tabs (Leads, Priority, History)
+const mainViewTabs = document.querySelectorAll('#main-view-tabs .header-tab');
+mainViewTabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    mainViewTabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentMainView = tab.getAttribute('data-view');
+    
+    // Hide/show panels based on active view
+    const statsContainer = document.querySelector('.stats-container');
+    const scannerCard = document.querySelector('.scanner-card');
+    
+    if (currentMainView === 'priority') {
+      if (statsContainer) statsContainer.style.display = 'none';
+      if (scannerCard) scannerCard.style.display = 'none';
+    } else {
+      if (statsContainer) statsContainer.style.display = 'grid';
+      if (scannerCard) scannerCard.style.display = 'flex';
+    }
+    
+    filterAndSearch();
+  });
+});
 
 // Website Filters
 filterWebsiteBtns.forEach(btn => {
@@ -721,6 +789,9 @@ function selectLead(lead, rowEl) {
   detailsPanel.style.display = 'flex';
   detailsContent.style.display = 'block';
   detailsEmptyState.style.display = 'none';
+
+  // Update Favorite Star Indicator in modal
+  updateModalFavStar();
 
   // Basic Info
   detailName.textContent = lead.business_name;
@@ -1287,4 +1358,48 @@ if (detailsPanel) {
       document.querySelectorAll('#leads-table-body tr').forEach(r => r.classList.remove('selected'));
     }
   });
+}
+
+// --- DETAILS MODAL FAVORITE STAR TOGGLE ---
+const btnFavLead = document.getElementById('btn-fav-lead');
+if (btnFavLead) {
+  btnFavLead.addEventListener('click', async () => {
+    if (!selectedLead) return;
+    const newFavStatus = !(selectedLead.is_favorite === 1 || selectedLead.is_favorite === true);
+    
+    try {
+      await safeFetchJson(`/api/leads/${selectedLead.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_favorite: newFavStatus })
+      });
+      
+      selectedLead.is_favorite = newFavStatus ? 1 : 0;
+      showToast(newFavStatus ? 'Added to Priority list.' : 'Removed from Priority list.');
+      
+      // Update local array data as well
+      const leadObj = leads.find(l => l.id === selectedLead.id);
+      if (leadObj) {
+        leadObj.is_favorite = selectedLead.is_favorite;
+      }
+      
+      updateModalFavStar();
+      filterAndSearch();
+    } catch (error) {
+      console.error(error);
+      showToast('Error updating priority.');
+    }
+  });
+}
+
+function updateModalFavStar() {
+  const btnFavLead = document.getElementById('btn-fav-lead');
+  if (!btnFavLead || !selectedLead) return;
+  const isFav = selectedLead.is_favorite === 1 || selectedLead.is_favorite === true;
+  const icon = btnFavLead.querySelector('i');
+  if (icon) {
+    icon.className = isFav ? 'fa-solid fa-star' : 'fa-regular fa-star';
+  }
+  btnFavLead.style.color = isFav ? '#f59e0b' : 'var(--text-muted)';
+  btnFavLead.title = isFav ? 'Remove from Priority' : 'Mark as Priority';
 }

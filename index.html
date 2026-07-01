@@ -68,10 +68,10 @@
             </h2>
           </div>
 
-          <div class="header-tabs">
-            <button class="header-tab active">Leads</button>
-            <button class="header-tab">Analytics</button>
-            <button class="header-tab">History</button>
+          <div class="header-tabs" id="main-view-tabs">
+            <button class="header-tab active" data-view="all">Leads</button>
+            <button class="header-tab" data-view="priority">Priority</button>
+            <button class="header-tab" data-view="history">History</button>
           </div>
 
           <div class="header-right">
@@ -234,10 +234,6 @@
           <div class="active-leads-header">
             <div class="active-leads-title">
               <h3>Active Leads</h3>
-              <div class="active-leads-filters">
-                <button class="pill-btn active">All</button>
-                <button class="pill-btn">High Priority</button>
-              </div>
             </div>
 
             <div class="header-search-container">
@@ -368,9 +364,12 @@
           <!-- Modal details content -->
           <div id="details-content" style="display: none">
             <div class="details-header">
-              <h2 class="panel-title details-header-title" id="detail-name">
-                Business Name
-              </h2>
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <h2 class="panel-title details-header-title" id="detail-name">Business Name</h2>
+                <button class="fav-modal-btn" id="btn-fav-lead" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--text-muted); transition: transform var(--transition-fast);" title="Toggle Priority">
+                  <i class="fa-regular fa-star"></i>
+                </button>
+              </div>
               <button
                 class="btn btn-secondary btn-delete-lead"
                 id="btn-delete-lead"

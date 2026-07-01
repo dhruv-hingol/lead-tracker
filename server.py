@@ -155,9 +155,12 @@ class LeadTrackerRequestHandler(http.server.BaseHTTPRequestHandler):
                 
                 # Merge new values
                 updated_lead = dict(lead)
-                for key in ["outreach_status", "notes", "contact_name", "contact_email", "website_status"]:
+                for key in ["outreach_status", "notes", "contact_name", "contact_email", "website_status", "is_favorite"]:
                     if key in data:
-                        updated_lead[key] = data[key]
+                        val = data[key]
+                        if key == "is_favorite":
+                            val = 1 if val else 0
+                        updated_lead[key] = val
                 
                 database.save_lead(updated_lead)
                 self.send_json({"message": "Lead updated successfully", "lead": updated_lead})

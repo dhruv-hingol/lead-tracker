@@ -955,6 +955,21 @@ tbody tr.selected {
   transform: scale(0.95);
 }
 
+.fav-row-btn,
+.fav-modal-btn {
+  transition: transform var(--transition-fast) !important;
+}
+
+.fav-row-btn:hover, 
+.fav-modal-btn:hover {
+  transform: scale(1.2) !important;
+}
+
+.fav-row-btn:active, 
+.fav-modal-btn:active {
+  transform: scale(0.9) !important;
+}
+
 /* Link elements in table */
 .table-link {
   font-weight: 600;

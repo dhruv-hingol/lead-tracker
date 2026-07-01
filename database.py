@@ -37,9 +37,17 @@ def init_db():
             email_confidence TEXT,
             outreach_status TEXT DEFAULT 'New',
             notes TEXT,
+            is_favorite INTEGER DEFAULT 0,
             date_found TEXT DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    
+    # Migrate existing databases to add is_favorite column if missing
+    try:
+        cursor.execute("ALTER TABLE leads ADD COLUMN is_favorite INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        # Column already exists
+        pass
     
     conn.commit()
     conn.close()
@@ -77,7 +85,7 @@ def save_lead(lead_data):
             "business_name", "category", "country", "city_region", "full_address", 
             "phone", "website_url", "website_status", "pagespeed_score", "mobile_score", 
             "load_time", "has_https", "has_viewport", "copyright_year", "audit_notes", 
-            "contact_name", "contact_email", "email_confidence"
+            "contact_name", "contact_email", "email_confidence", "is_favorite"
         ]:
             if key in lead_data:
                 update_fields.append(f"{key} = ?")

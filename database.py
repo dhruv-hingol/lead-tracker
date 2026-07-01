@@ -81,7 +81,10 @@ def save_lead(lead_data):
         ]:
             if key in lead_data:
                 update_fields.append(f"{key} = ?")
-                params.append(lead_data[key])
+                val = lead_data[key]
+                if isinstance(val, (list, dict)):
+                    val = json.dumps(val)
+                params.append(val)
                 
         if "notes" in lead_data and lead_data["notes"]:
             update_fields.append("notes = ?")
@@ -106,6 +109,8 @@ def save_lead(lead_data):
         for key, val in lead_data.items():
             columns.append(key)
             placeholders.append("?")
+            if isinstance(val, (list, dict)):
+                val = json.dumps(val)
             values.append(val)
             
         sql = f"INSERT INTO leads ({', '.join(columns)}) VALUES ({', '.join(placeholders)})"

@@ -43,7 +43,7 @@ class WebPageParser(HTMLParser):
             elif href and not href.startswith('#') and not href.startswith('javascript:'):
                 # Look for contact/about page links
                 href_lower = href.lower()
-                if any(k in href_lower for k in ['contact', 'about', 'info', 'team', 'staff', 'owner']):
+                if any(k in href_lower for k in ['contact', 'about', 'info', 'team', 'staff', 'owner', 'touch', 'reach', 'connect', 'support', 'write', 'help']):
                     # Resolve relative URL
                     full_url = urllib.parse.urljoin(self.base_url, href)
                     # Ensure it's on the same domain
@@ -70,10 +70,14 @@ class WebPageParser(HTMLParser):
     def get_text(self):
         return " ".join(self.text_accumulator)
 
-def fetch_url(url, timeout=6):
-    """Fetches a URL using urllib and returns (html_content, final_url, status_code)."""
+def fetch_url(url, timeout=12):
+    """Fetches a URL using urllib with browser-grade headers and returns (html_content, final_url, status_code)."""
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "max-age=0",
+        "Upgrade-Insecure-Requests": "1"
     }
     req = urllib.request.Request(url, headers=headers)
     try:
@@ -81,7 +85,12 @@ def fetch_url(url, timeout=6):
             html = response.read().decode('utf-8', errors='ignore')
             return html, response.geturl(), response.status
     except urllib.error.HTTPError as e:
-        return "", url, e.code
+        # Some servers return HTML content along with error codes
+        try:
+            html = e.read().decode('utf-8', errors='ignore')
+        except Exception:
+            html = ""
+        return html, url, e.code
     except Exception as e:
         return "", url, 0
 
@@ -106,10 +115,15 @@ def crawl_and_audit_website(url):
     load_time = round(time.time() - start_time, 2)
     result["load_time"] = load_time
     
-    if status == 0 or status >= 400:
+    if status == 0 or status == 404:
         result["website_status"] = "Dead Link"
-        result["audit_notes"].append(f"Website returned status code {status} or failed to load.")
+        result["audit_notes"].append(f"Website failed to connect (status code {status}).")
         return result
+    elif status >= 400:
+        result["website_status"] = "Needs Improvement"
+        result["audit_notes"].append(f"Website accessible but returned restricted status code {status} (bot block/maintenance).")
+        if not html:
+            return result
         
     # Parse homepage
     parser = WebPageParser(final_url)
@@ -126,6 +140,12 @@ def crawl_and_audit_website(url):
     text_emails = EMAIL_REGEX.findall(parser.get_text())
     for email in text_emails:
         # Filter out common false positives like images
+        if not any(email.lower().endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp']):
+            emails.add(email)
+            
+    # Search entire raw HTML of homepage (highly aggressive)
+    raw_emails = EMAIL_REGEX.findall(html)
+    for email in raw_emails:
         if not any(email.lower().endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp']):
             emails.add(email)
             
@@ -148,6 +168,11 @@ def crawl_and_audit_website(url):
                 emails.add(email)
             sub_text_emails = EMAIL_REGEX.findall(sub_parser.get_text())
             for email in sub_text_emails:
+                if not any(email.lower().endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp']):
+                    emails.add(email)
+            # Search entire raw HTML of contact subpage
+            sub_raw_emails = EMAIL_REGEX.findall(sub_html)
+            for email in sub_raw_emails:
                 if not any(email.lower().endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp']):
                     emails.add(email)
             if sub_parser.contact_names:
@@ -367,6 +392,10 @@ def run_pipeline(location, category, api_key, progress_callback=None):
                     else:
                         lead_data["audit_notes"] = f"Website is healthy (PageSpeed: {ps_score}/100)"
                         
+        # Ensure audit_notes is a string before saving
+        if isinstance(lead_data.get("audit_notes"), list):
+            lead_data["audit_notes"] = ", ".join(lead_data["audit_notes"])
+            
         # Save to SQLite database
         database.save_lead(lead_data)
         saved_count += 1

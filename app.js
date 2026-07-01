@@ -18,7 +18,10 @@ const filterWebsiteBtns = document.querySelectorAll('#filter-website .filter-btn
 const filterOutreachBtns = document.querySelectorAll('#filter-outreach .filter-btn');
 
 // Scanner Elements
-const scanLocationInput = document.getElementById('scan-location');
+const scanCountrySelect = document.getElementById('scan-country');
+const scanStateSelect = document.getElementById('scan-state');
+const scanCityInput = document.getElementById('scan-city');
+const scanAreaInput = document.getElementById('scan-area');
 const scanCategoryInput = document.getElementById('scan-category');
 const scanApiKeyInput = document.getElementById('scan-api-key');
 const btnStartScan = document.getElementById('btn-start-scan');
@@ -152,11 +155,73 @@ Best regards,
   }
 };
 
+let countryData = [];
+
+async function loadCountryData() {
+  try {
+    countryData = await safeFetchJson('/countries_states.json') || [];
+    
+    // Populate Country dropdown
+    scanCountrySelect.innerHTML = '';
+    
+    // Sort countries by name alphabetically
+    countryData.sort((a, b) => a.countryName.localeCompare(b.countryName));
+    
+    countryData.forEach(country => {
+      const opt = document.createElement('option');
+      opt.value = country.countryShortCode;
+      opt.textContent = country.countryName;
+      scanCountrySelect.appendChild(opt);
+    });
+    
+    // Select India (IN) as default if present
+    const defaultIndex = countryData.findIndex(c => c.countryShortCode === 'IN');
+    if (defaultIndex !== -1) {
+      scanCountrySelect.selectedIndex = defaultIndex;
+    } else {
+      // Default to US if India not found
+      const usIndex = countryData.findIndex(c => c.countryShortCode === 'US');
+      if (usIndex !== -1) scanCountrySelect.selectedIndex = usIndex;
+    }
+    
+    populateStates();
+  } catch (error) {
+    console.error('Failed to load country/state data:', error);
+  }
+}
+
+function populateStates() {
+  const selectedCountryCode = scanCountrySelect.value;
+  const country = countryData.find(c => c.countryShortCode === selectedCountryCode);
+  scanStateSelect.innerHTML = '';
+  
+  if (country && country.regions) {
+    // Sort regions alphabetically
+    const sortedRegions = [...country.regions].sort((a, b) => a.name.localeCompare(b.name));
+    
+    sortedRegions.forEach(region => {
+      const opt = document.createElement('option');
+      opt.value = region.name;
+      opt.textContent = region.name;
+      scanStateSelect.appendChild(opt);
+    });
+  }
+  
+  if (scanStateSelect.children.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = 'No subdivisions';
+    scanStateSelect.appendChild(opt);
+  }
+}
+
 // --- INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', () => {
   loadSavedApiKey();
   fetchLeads();
   checkScanStatus();
+  loadCountryData();
+  scanCountrySelect.addEventListener('change', populateStates);
 });
 
 function loadSavedApiKey() {
@@ -166,15 +231,14 @@ function loadSavedApiKey() {
   }
 }
 
-const API_BASE = window.location.port === '8000' 
-  ? '' 
-  : (window.location.protocol === 'file:' 
-     ? 'http://localhost:8000' 
-     : `${window.location.protocol}//${window.location.hostname || 'localhost'}:8000`);
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_BASE = window.location.protocol === 'file:' 
+  ? 'http://localhost:8000' 
+  : ((isLocalhost && window.location.port !== '8000') ? 'http://localhost:8000' : '');
 
 // Helper for safe fetch and JSON parsing
 async function safeFetchJson(url, options = {}) {
-  const targetUrl = url.startsWith('http') ? url : `${API_BASE}${url}`;
+  const targetUrl = (url.startsWith('http') || !url.startsWith('/api/')) ? url : `${API_BASE}${url}`;
   const response = await fetch(targetUrl, options);
   const contentType = response.headers.get('content-type') || '';
   
@@ -282,12 +346,15 @@ function updateProgressUI(percent, message) {
 
 // --- SCANNER TRIGGER ---
 btnStartScan.addEventListener('click', async () => {
-  const location = scanLocationInput.value.trim();
+  const country = scanCountrySelect.options[scanCountrySelect.selectedIndex].text;
+  const state = scanStateSelect.value;
+  const city = scanCityInput.value.trim();
+  const area = scanAreaInput.value.trim();
   const category = scanCategoryInput.value.trim();
   const apiKey = scanApiKeyInput.value.trim();
 
-  if (!location || !category) {
-    showToast('Please enter both Location and Category.');
+  if (!city || !category) {
+    showToast('Please enter both City and Category.');
     return;
   }
 
@@ -303,7 +370,7 @@ btnStartScan.addEventListener('click', async () => {
     const data = await safeFetchJson('/api/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ location, category, api_key: apiKey })
+      body: JSON.stringify({ country, state, city, area, category, api_key: apiKey })
     });
     
     showToast('Background scan started!');
@@ -347,7 +414,7 @@ function renderTable() {
   if (filteredLeads.length === 0) {
     tableBody.innerHTML = `
       <tr>
-        <td colspan="5" style="text-align: center; padding: 4rem; color: var(--text-muted);">
+        <td colspan="8" style="text-align: center; padding: 4rem; color: var(--text-muted);">
           No leads match the current filters.
         </td>
       </tr>
@@ -390,6 +457,14 @@ function renderTable() {
     
     const outreachBadge = `<span class="${outreachClass}" style="text-transform: capitalize;">${outreach}</span>`;
 
+    const websiteLink = lead.website_url 
+      ? `<a href="${lead.website_url}" target="_blank" class="table-link" style="color: var(--accent-primary); text-decoration: none;" title="${lead.website_url}"><i class="fa-solid fa-arrow-up-right-from-square"></i> Visit</a>` 
+      : '<span style="color: var(--text-muted)">None</span>';
+
+    const emailText = lead.contact_email && lead.contact_email !== 'Not Found' 
+      ? `<span class="table-email" style="font-size: 0.8rem;" title="${lead.contact_email}">${lead.contact_email}</span>` 
+      : '<span style="color: var(--text-muted)">None</span>';
+
     tr.innerHTML = `
       <td style="font-weight: 600;">${lead.business_name || 'Unknown'}</td>
       <td>
@@ -397,11 +472,42 @@ function renderTable() {
         <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.1rem;">${lead.city_region || 'N/A'}</div>
       </td>
       <td>${lead.phone || '<span style="color: var(--text-muted)">None</span>'}</td>
+      <td>${emailText}</td>
+      <td>${websiteLink}</td>
       <td>${statusBadge}</td>
       <td>${outreachBadge}</td>
+      <td style="text-align: center; vertical-align: middle;">
+        <button class="delete-row-btn" style="background: none; border: none; color: var(--error); cursor: pointer; padding: 0.25rem 0.5rem; font-size: 1rem; opacity: 0.7; transition: opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </td>
     `;
 
     tr.addEventListener('click', () => selectLead(lead, tr));
+    
+    // Add event listener to delete button
+    const deleteBtn = tr.querySelector('.delete-row-btn');
+    deleteBtn.addEventListener('click', async (e) => {
+      e.stopPropagation(); // Prevent row selection
+      if (confirm(`Are you sure you want to delete "${lead.business_name}"?`)) {
+        try {
+          await safeFetchJson(`/api/leads/${lead.id}`, { method: 'DELETE' });
+          showToast('Lead deleted successfully.');
+          
+          if (selectedLead && selectedLead.id === lead.id) {
+            selectedLead = null;
+            detailsEmptyState.style.display = 'flex';
+            detailsContent.style.display = 'none';
+          }
+          
+          fetchLeads();
+        } catch (error) {
+          console.error(error);
+          showToast('Error deleting lead.');
+        }
+      }
+    });
+
     tableBody.appendChild(tr);
   });
 
@@ -1032,4 +1138,24 @@ function showToast(message) {
   setTimeout(() => {
     toast.classList.remove('show');
   }, 3000);
+}
+
+// Clear Database Button
+const clearDatabaseBtn = document.getElementById('clear-database-btn');
+if (clearDatabaseBtn) {
+  clearDatabaseBtn.addEventListener('click', async () => {
+    if (confirm('WARNING: Are you sure you want to delete ALL leads from the database? This action cannot be undone.')) {
+      try {
+        await safeFetchJson('/api/leads', { method: 'DELETE' });
+        showToast('Database cleared successfully.');
+        selectedLead = null;
+        detailsEmptyState.style.display = 'flex';
+        detailsContent.style.display = 'none';
+        fetchLeads();
+      } catch (error) {
+        console.error(error);
+        showToast('Error clearing database.');
+      }
+    }
+  });
 }

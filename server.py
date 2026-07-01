@@ -92,12 +92,21 @@ class LeadTrackerRequestHandler(http.server.BaseHTTPRequestHandler):
                 self.send_json({"error": "Invalid JSON"}, 400)
                 return
 
-            location = data.get("location")
+            country = data.get("country")
+            state = data.get("state")
+            city = data.get("city")
+            area = data.get("area")
             category = data.get("category")
             api_key = data.get("api_key") or os.environ.get("GOOGLE_PLACES_API_KEY")
 
+            if country or state or city or area:
+                loc_parts = [p.strip() for p in [area, city, state, country] if p and p.strip()]
+                location = ", ".join(loc_parts)
+            else:
+                location = data.get("location")
+
             if not location or not category:
-                self.send_json({"error": "Location and Category are required"}, 400)
+                self.send_json({"error": "Location/City and Category are required"}, 400)
                 return
 
             if not api_key:
@@ -157,12 +166,20 @@ class LeadTrackerRequestHandler(http.server.BaseHTTPRequestHandler):
             return
         else:
             self.send_json({"error": "Not Found"}, 404)
+            return
 
     def do_DELETE(self):
         parsed_url = urllib.parse.urlparse(self.path)
         path = parsed_url.path
 
-        if path.startswith("/api/leads/"):
+        if path == "/api/leads" or path == "/api/leads/":
+            try:
+                database.clear_all_leads()
+                self.send_json({"message": "All leads deleted successfully"})
+            except Exception as e:
+                self.send_json({"error": str(e)}, 500)
+            return
+        elif path.startswith("/api/leads/"):
             lead_id = path.split("/")[-1]
             try:
                 database.delete_lead(lead_id)

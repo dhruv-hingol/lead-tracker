@@ -36,8 +36,28 @@
           <h3 class="card-title"><i class="fa-solid fa-magnifying-glass-location"></i> Find New Leads</h3>
           <div class="scanner-form">
             <div class="input-field">
-              <label for="scan-location">City / Region</label>
-              <input type="text" id="scan-location" placeholder="e.g. Ahmedabad, Gujarat or Austin, TX">
+              <label for="scan-country">Country</label>
+              <select id="scan-country">
+                <option value="IN">India</option>
+                <option value="US">United States</option>
+                <option value="GB">United Kingdom</option>
+                <option value="CA">Canada</option>
+                <option value="AU">Australia</option>
+              </select>
+            </div>
+            <div class="input-field">
+              <label for="scan-state">State</label>
+              <select id="scan-state">
+                <!-- Dynamically populated via JS -->
+              </select>
+            </div>
+            <div class="input-field">
+              <label for="scan-city">City</label>
+              <input type="text" id="scan-city" placeholder="e.g. Ahmedabad">
+            </div>
+            <div class="input-field">
+              <label for="scan-area">Area / Neighborhood</label>
+              <input type="text" id="scan-area" placeholder="e.g. C G Road">
             </div>
             <div class="input-field">
               <label for="scan-category">Business Category</label>
@@ -88,6 +108,9 @@
             <i class="fa-solid fa-magnifying-glass"></i>
             <input type="text" id="search-input" placeholder="Search by name, address, category...">
           </div>
+          <button id="clear-database-btn" style="background-color: var(--error); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; font-size: 0.85rem; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
+            <i class="fa-solid fa-trash-can"></i> Clear Data
+          </button>
           <div class="filter-group-container">
             <div class="filter-row">
               <span class="filter-label">Website:</span>
@@ -120,13 +143,16 @@
                 <th>Business Name</th>
                 <th>Category & City</th>
                 <th>Phone</th>
+                <th>Email</th>
+                <th>Website</th>
                 <th>Website Status</th>
                 <th>Outreach</th>
+                <th style="text-align: center;">Action</th>
               </tr>
             </thead>
             <tbody id="leads-table-body">
               <tr>
-                <td colspan="5" style="text-align: center; padding: 4rem; color: var(--text-muted);">
+                <td colspan="8" style="text-align: center; padding: 4rem; color: var(--text-muted);">
                   <i class="fa-solid fa-database" style="font-size: 2.5rem; margin-bottom: 1rem; display: block; opacity: 0.5;"></i>
                   Loading leads from database...
                 </td>

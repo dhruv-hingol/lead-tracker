@@ -247,7 +247,7 @@ def check_pagespeed(url, api_key=None):
         print(f"PageSpeed API Error for {url}: {e}")
         return None, None
 
-def run_pipeline(location, category, api_key, progress_callback=None):
+def run_pipeline(location, category, api_key, progress_callback=None, country=None):
     """
     Runs the full lead-generation pipeline.
     Queries Places API, audits websites, crawls for contact info, and saves to DB.
@@ -325,7 +325,7 @@ def run_pipeline(location, category, api_key, progress_callback=None):
                 
             if d_data.get("status") == "OK":
                 result = d_data.get("result", {})
-                phone = result.get("formatted_phone_number") or result.get("international_phone_number") or ""
+                phone = result.get("international_phone_number") or result.get("formatted_phone_number") or ""
                 website = result.get("website") or ""
                 maps_url = result.get("url") or ""
                 address = result.get("formatted_address") or address
@@ -339,14 +339,27 @@ def run_pipeline(location, category, api_key, progress_callback=None):
         uid_source = place_id if place_id else f"{name}_{phone}"
         lead_id = hashlib.md5(uid_source.encode('utf-8')).hexdigest()
         
-        # Determine country based on location or phone
-        country = "India" if "india" in location.lower() or (phone and phone.startswith("+91")) else "USA"
+        # Determine country based on passed country parameter, location, or phone
+        lead_country = country
+        if not lead_country:
+            if "india" in location.lower() or (phone and phone.startswith("+91")):
+                lead_country = "India"
+            elif "united kingdom" in location.lower() or "uk" in location.lower() or (phone and phone.startswith("+44")):
+                lead_country = "United Kingdom"
+            elif "canada" in location.lower() or (phone and phone.startswith("+1") and not ("united states" in location.lower() or "usa" in location.lower())):
+                lead_country = "Canada"
+            elif "australia" in location.lower() or (phone and phone.startswith("+61")):
+                lead_country = "Australia"
+            else:
+                lead_country = "USA"
+
+
         
         lead_data = {
             "id": lead_id,
             "business_name": name,
             "category": category,
-            "country": country,
+            "country": lead_country,
             "city_region": location,
             "full_address": address,
             "phone": phone,

@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Lead Tracker — Local Business Lead Finder & CRM</title>
+    <link rel="icon" type="image/avif" href="image.avif" />
     <link rel="stylesheet" href="style.css" />
     <!-- FontAwesome Icons -->
     <link
@@ -16,7 +17,7 @@
       <!-- Sidebar Navigation -->
       <aside class="sidebar">
         <div class="sidebar-logo">
-          <h1><i class="fa-solid fa-compass-drafting"></i> Lead Tracker</h1>
+          <h1><img src="image.avif" alt="Lead Tracker Logo" class="logo-img" style="height: 1.8rem; width: 1.8rem; border-radius: var(--radius-sm); vertical-align: middle; margin-right: 0.5rem;" /> Lead Tracker</h1>
           <p>Operational Mastery</p>
         </div>
 
@@ -43,6 +44,9 @@
         </div>
 
         <div class="sidebar-footer">
+          <button class="sidebar-footer-item" id="theme-toggle-btn">
+            <i class="fa-solid fa-moon"></i> <span>Dark Mode</span>
+          </button>
           <a href="#" class="sidebar-footer-item"
             ><i class="fa-solid fa-gear"></i> Settings</a
           >
@@ -179,11 +183,9 @@
               </div>
               <div class="input-field">
                 <label for="scan-city">City</label>
-                <input
-                  type="text"
-                  id="scan-city"
-                  placeholder="e.g. San Francisco"
-                />
+                <select id="scan-city">
+                  <option value="">Select a state first</option>
+                </select>
               </div>
               <div class="input-field">
                 <label for="scan-area">Area / Neighborhood</label>

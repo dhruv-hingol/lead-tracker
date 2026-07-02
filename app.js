@@ -30,7 +30,7 @@ const itemsPerPage = 10;
 // Scanner Elements
 const scanCountrySelect = document.getElementById('scan-country');
 const scanStateSelect = document.getElementById('scan-state');
-const scanCityInput = document.getElementById('scan-city');
+const scanCitySelect = document.getElementById('scan-city');
 const scanAreaInput = document.getElementById('scan-area');
 const scanCategoryInput = document.getElementById('scan-category');
 const scanApiKeyInput = document.getElementById('scan-api-key');
@@ -223,6 +223,61 @@ function populateStates() {
     opt.textContent = 'No subdivisions';
     scanStateSelect.appendChild(opt);
   }
+
+  // Populate cities for the selected state
+  populateCities();
+}
+
+async function populateCities() {
+  const countryName = scanCountrySelect.options[scanCountrySelect.selectedIndex].text;
+  const stateName = scanStateSelect.value;
+  
+  scanCitySelect.innerHTML = '<option value="">Loading cities...</option>';
+  
+  if (!countryName || !stateName || stateName === 'No subdivisions' || stateName === '') {
+    scanCitySelect.innerHTML = '<option value="">No cities available</option>';
+    return;
+  }
+  
+  try {
+    const response = await fetch('https://countriesnow.space/api/v0.1/countries/state/cities', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        country: countryName,
+        state: stateName
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch cities');
+    }
+    
+    const resData = await response.json();
+    const cities = resData.data || [];
+    
+    scanCitySelect.innerHTML = '';
+    
+    if (cities.length === 0) {
+      scanCitySelect.innerHTML = '<option value="">No cities found</option>';
+      return;
+    }
+    
+    // Sort cities alphabetically
+    cities.sort((a, b) => a.localeCompare(b));
+    
+    cities.forEach(city => {
+      const opt = document.createElement('option');
+      opt.value = city;
+      opt.textContent = city;
+      scanCitySelect.appendChild(opt);
+    });
+  } catch (error) {
+    console.error('Error populating cities:', error);
+    scanCitySelect.innerHTML = '<option value="">Error loading cities</option>';
+  }
 }
 
 // --- INITIALIZATION ---
@@ -232,6 +287,7 @@ window.addEventListener('DOMContentLoaded', () => {
   checkScanStatus();
   loadCountryData();
   scanCountrySelect.addEventListener('change', populateStates);
+  scanStateSelect.addEventListener('change', populateCities);
 });
 
 function loadSavedApiKey() {
@@ -358,13 +414,13 @@ function updateProgressUI(percent, message) {
 btnStartScan.addEventListener('click', async () => {
   const country = scanCountrySelect.options[scanCountrySelect.selectedIndex].text;
   const state = scanStateSelect.value;
-  const city = scanCityInput.value.trim();
+  const city = scanCitySelect.value.trim();
   const area = scanAreaInput.value.trim();
   const category = scanCategoryInput.value.trim();
   const apiKey = scanApiKeyInput.value.trim();
 
   if (!city || !category) {
-    showToast('Please enter both City and Category.');
+    showToast('Please select both City and Category.');
     return;
   }
 
@@ -550,7 +606,14 @@ function renderTable() {
       </td>
     `;
 
-    tr.addEventListener('click', () => selectLead(lead, tr));
+    // Add event listener to company name click instead of the whole row
+    const companyNameEl = tr.querySelector('.company-name');
+    if (companyNameEl) {
+      companyNameEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectLead(lead, tr);
+      });
+    }
     
     // Add event listeners to copy buttons
     const copyBtns = tr.querySelectorAll('.copy-cell-btn');
@@ -1143,7 +1206,6 @@ csvUploadInput.addEventListener('change', (e) => {
         const lead_data = {
           id: item.id || item.lead_id || hashString(item.business_name + (item.phone || '')),
           business_name: item.business_name || item.name || 'Unknown',
-          category: item.category || 'N/A',
           country: item.country || 'USA',
           city_region: item.city_region || item.location || 'N/A',
           full_address: item.full_address || item.address || '',
@@ -1402,4 +1464,38 @@ function updateModalFavStar() {
   }
   btnFavLead.style.color = isFav ? '#f59e0b' : 'var(--text-muted)';
   btnFavLead.title = isFav ? 'Remove from Priority' : 'Mark as Priority';
+}
+
+// --- DARK/LIGHT THEME TOGGLE ---
+const btnThemeToggle = document.getElementById('theme-toggle-btn');
+const rootElement = document.documentElement;
+
+// Check for saved preference
+const savedTheme = localStorage.getItem('theme') || 'dark';
+if (savedTheme === 'light') {
+  rootElement.classList.add('light-theme');
+  updateThemeToggleUI(true);
+} else {
+  updateThemeToggleUI(false);
+}
+
+if (btnThemeToggle) {
+  btnThemeToggle.addEventListener('click', () => {
+    const isLight = rootElement.classList.toggle('light-theme');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    updateThemeToggleUI(isLight);
+  });
+}
+
+function updateThemeToggleUI(isLight) {
+  if (!btnThemeToggle) return;
+  const icon = btnThemeToggle.querySelector('i');
+  const span = btnThemeToggle.querySelector('span');
+  if (isLight) {
+    icon.className = 'fa-solid fa-sun';
+    span.textContent = 'Light Mode';
+  } else {
+    icon.className = 'fa-solid fa-moon';
+    span.textContent = 'Dark Mode';
+  }
 }

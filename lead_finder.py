@@ -98,7 +98,7 @@ def main():
             "business_name": details.get("name", place.get("name", "")),
             "category": args.category,
             "address": details.get("formatted_address", place.get("formatted_address", "")),
-            "phone": details.get("formatted_phone_number") or details.get("international_phone_number") or "",
+            "phone": details.get("international_phone_number") or details.get("formatted_phone_number") or "",
             "website": website,
             "has_website": has_website,
             "google_maps_url": details.get("url", ""),

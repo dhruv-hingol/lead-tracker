@@ -120,7 +120,7 @@ class LeadTrackerRequestHandler(http.server.BaseHTTPRequestHandler):
             # Start pipeline in a background thread
             thread = threading.Thread(
                 target=self.run_background_scan,
-                args=(location, category, api_key)
+                args=(location, category, api_key, country)
             )
             thread.daemon = True
             thread.start()
@@ -224,6 +224,8 @@ class LeadTrackerRequestHandler(http.server.BaseHTTPRequestHandler):
                 mime_type = "image/jpeg"
             elif file_path.endswith(".ico"):
                 mime_type = "image/x-icon"
+            elif file_path.endswith(".avif"):
+                mime_type = "image/avif"
                 
             self.send_response(200)
             self.send_header("Content-Type", mime_type)
@@ -237,7 +239,7 @@ class LeadTrackerRequestHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b"Not Found")
 
-    def run_background_scan(self, location, category, api_key):
+    def run_background_scan(self, location, category, api_key, country=None):
         global search_progress
         search_progress["status"] = "scanning"
         search_progress["percentage"] = 0
@@ -253,7 +255,7 @@ class LeadTrackerRequestHandler(http.server.BaseHTTPRequestHandler):
                     search_progress["status"] = "completed"
 
         try:
-            pipeline.run_pipeline(location, category, api_key, progress_callback=progress_cb)
+            pipeline.run_pipeline(location, category, api_key, progress_callback=progress_cb, country=country)
         except Exception as e:
             search_progress["status"] = "error"
             search_progress["percentage"] = 100

@@ -73,6 +73,49 @@
   --glass-bg: rgba(20, 25, 34, 0.75);
   --glass-border: rgba(255, 255, 255, 0.04);
   --glass-blur: blur(20px);
+  
+  --bg-hover: rgba(255, 255, 255, 0.03);
+  --bg-stripe: rgba(255, 255, 255, 0.01);
+  --bg-table: rgba(15, 22, 42, 0.4);
+}
+
+:root.light-theme {
+  --bg-primary: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #F1F5F9;
+  --border-color: #E2E8F0;
+  
+  --primary: #2F6FED;
+  --primary-hover: #1E50B3;
+  --primary-glow: rgba(47, 111, 237, 0.08);
+  --primary-muted-bg: #EFF6FF;
+
+  --danger-text: #D92D20;
+  --danger-bg: #FEF3F2;
+  --danger-border: #FECDCA;
+
+  --warning-text: #B54708;
+  --warning-bg: #FFFAEB;
+  --warning-border: #FEDF89;
+
+  --success-text: #027A48;
+  --success-bg: #ECFDF3;
+  --success-border: #D1FADF;
+
+  --neutral-text: #475467;
+  --neutral-bg: #F2F4F7;
+  --neutral-border: #EAECF0;
+
+  --text-primary: #0F172A;
+  --text-secondary: #475467;
+  --text-muted: #98A2B3;
+  
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(0, 0, 0, 0.05);
+  
+  --bg-hover: rgba(0, 0, 0, 0.02);
+  --bg-stripe: rgba(0, 0, 0, 0.01);
+  --bg-table: #FFFFFF;
 }
 
 /* ==========================================================================
@@ -246,6 +289,16 @@ a:hover {
   align-items: center;
   gap: 0.75rem;
   transition: color var(--transition-fast);
+}
+
+button.sidebar-footer-item {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
 }
 
 .sidebar-footer-item:hover {
@@ -852,7 +905,7 @@ a:hover {
   overflow-x: auto;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
-  background: rgba(15, 22, 42, 0.4);
+  background: var(--bg-table);
 }
 
 table {
@@ -899,17 +952,16 @@ tr:last-child td {
 }
 
 tbody tr {
-  cursor: pointer;
   transition: background var(--transition-fast);
 }
 
 /* Zebra striping */
 tbody tr:nth-child(even) {
-  background: rgba(255, 255, 255, 0.01);
+  background: var(--bg-stripe);
 }
 
 tbody tr:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-hover);
 }
 
 tbody tr.selected {
@@ -1008,6 +1060,13 @@ tbody tr.selected {
 .company-name {
   font-weight: 700;
   color: var(--text-primary);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.company-name:hover {
+  color: var(--primary);
+  text-decoration: underline;
 }
 
 .company-desc {
